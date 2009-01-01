@@ -1,6 +1,6 @@
 package com.codebranch.akka.sandbox
 
-import akka.actor.{Props, ActorRef, ActorLogging, Actor}
+import akka.actor._
 import collection.mutable
 import akka.routing.FromConfig
 import akka.pattern.{ask, pipe}
@@ -8,6 +8,10 @@ import akka.util.Timeout
 import akka.event.LoggingReceive
 import akka.contrib.pattern.DistributedPubSubExtension
 import akka.contrib.pattern.DistributedPubSubMediator.{SubscribeAck, Subscribe, Publish}
+import akka.contrib.pattern.DistributedPubSubMediator.Publish
+import scala.Some
+import akka.contrib.pattern.DistributedPubSubMediator.Subscribe
+import akka.contrib.pattern.DistributedPubSubMediator.SubscribeAck
 
 
 
@@ -16,36 +20,33 @@ import akka.contrib.pattern.DistributedPubSubMediator.{SubscribeAck, Subscribe, 
  * Date: 6/13/13
  * Time: 12:21 PM
  */
-abstract class Node extends Actor with ActorLogging {
+abstract class Node extends Proxy with LeaderSelector with RandomSelector {
   import Node._
   import context._
 
   type K = String
-
+	val mediator = DistributedPubSubExtension(context.system).mediator
 	val workerAdded = WorkerAdded.getClass.getName
+	val workers = mutable.Map[K, ActorRef]()
+	val pending = mutable.Map[K, List[(ActorRef,Any)]]()
+	def member = random
 
+	// Will be never used, because receiver is None
+	override val path = self.path.name
+
+	def receiver: Option[ActorSelection] = None
 
 	implicit val timeout: Timeout
 
-	val mediator = DistributedPubSubExtension(context.system).mediator
-
-	val workers = mutable.Map[K, ActorRef]()
-  val pending = mutable.Map[K, List[(ActorRef,Any)]]()
-	val leader = actorOf(Props(
-		new LeaderProxy("ClusterNode")).withMailbox("proxy-mailbox"),
-		name = "leader")
-	val member = actorOf(Props(
-		new RandomProxy("ClusterNode")).withMailbox("proxy-mailbox"),
-		name = "random")
-
 
 	override def preStart() {
+		super.preStart()
 		mediator ! Subscribe(workerAdded, self)
-		leader ! GetWorkers
+		leader foreach (_ ! GetWorkers)
 	}
 
 
-  def receive: Receive = LoggingReceive {
+  override def process: Receive = {
 	  case Workers(w) => workers ++= w
 
 	  case m @ WorkerNotFound(msg, r) => {
@@ -58,7 +59,7 @@ abstract class Node extends Actor with ActorLogging {
 							    pending += (key -> ((r -> msg) :: p))
 						    case None =>
 							    pending += (key -> List(r -> msg))
-							    member ! CreateWorker(msg)
+							    member foreach (_ ! CreateWorker(msg))
 					    }
 			    }
 	    }
@@ -66,7 +67,6 @@ abstract class Node extends Actor with ActorLogging {
 
 	  case w @ NewWorker(ref, key) =>
 	    pending.getOrElse(key, Nil).foreach { case (requester, message) => {
-//        log.debug(s"Sending pending requests for $requester")
 		    ref ? message pipeTo requester
       }
       pending -= key
@@ -80,16 +80,14 @@ abstract class Node extends Actor with ActorLogging {
 
 		case WorkerAdded(w, k) => workers += (k -> w)
 
-	  case SubscribeAck(Subscribe(`workerAdded`, `self`)) => {
-		  log.debug("subscribed")
-	  }
+	  case SubscribeAck(Subscribe(`workerAdded`, `self`)) => {}
 
 		case GetWorkers => sender ! Workers(workers.toMap)
 
     case msg => withMessage(msg) { key =>
       workers.get(key) match {
         case Some(w) => w ? msg pipeTo sender
-        case None => leader ! WorkerNotFound(msg, sender)
+        case None => leader foreach (_ ! WorkerNotFound(msg, sender))
       }
     }
   }

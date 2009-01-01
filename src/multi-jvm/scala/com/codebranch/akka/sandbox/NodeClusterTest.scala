@@ -135,15 +135,19 @@ class ClusterTest extends MultiNodeSpec(ClusterTestConfig) with STMultiNodeSpec
 	    enterBarrier("startup")
     }
 
+	  val nodePath = "ClusterNode"
 
     "start a regular nodes with necessary actors" in {
       runOn(node1) {
-//        system.actorOf(Props(new ClusterNode),"ClusterNode")
-				val n = system.actorOf(Props(new ClusterNode),"ClusterNode")
+	      val n = system.actorOf(Props(new ClusterNode())
+			      .withMailbox("proxy-mailbox"),
+		      name = "ClusterNode")
 	      enterBarrier("deployed")
       }
       runOn(node2) {
-				val n = system.actorOf(Props(new ClusterNode),"ClusterNode")
+	      val n = system.actorOf(Props(new ClusterNode())
+			      .withMailbox("proxy-mailbox"),
+		      name = "ClusterNode")
 	      enterBarrier("deployed")
       }
 //	    runOn(node3) {
@@ -158,7 +162,9 @@ class ClusterTest extends MultiNodeSpec(ClusterTestConfig) with STMultiNodeSpec
 	  "Create actor per key" in {
       runOn(node3) {
 	      enterBarrier("deployed")
-	      val n = system.actorOf(Props(new ClusterNode),"ClusterNode")
+	      val n = system.actorOf(Props(new ClusterNode())
+			      .withMailbox("proxy-mailbox"),
+		      name = "ClusterNode")
 //				val leader = system.actorOf(Props(new LeaderProxy("ClusterNode"))
 //					.withMailbox("proxy-mailbox"),
 //					name = "leader")
@@ -170,8 +176,8 @@ class ClusterTest extends MultiNodeSpec(ClusterTestConfig) with STMultiNodeSpec
 
 
 	      val tester = actor(new Act {
-		      val w = 10
-		      val t = 50
+		      val w = 3
+		      val t = 5
 		      var counter = w*t
 		      var starter: ActorRef = _
 		      val member = system.actorOf(Props(new RandomProxy("ClusterNode"))
@@ -194,15 +200,8 @@ class ClusterTest extends MultiNodeSpec(ClusterTestConfig) with STMultiNodeSpec
 			      }
 		      }
 	      })
-
 	      tester ! "start"
 	      expectMsg(10 seconds, "finish")
-
-
-//
-
-
-
       }
 	    enterBarrier("finished")
     }

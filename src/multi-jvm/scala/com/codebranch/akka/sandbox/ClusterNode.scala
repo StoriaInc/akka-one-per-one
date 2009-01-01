@@ -14,7 +14,8 @@ import akka.event.LoggingReceive
  * Time: 5:00 PM
  */
 
-	class ClusterNode extends Node {
+	class ClusterNode( override val role: Option[String] = None)
+		extends Node {
 
 		implicit val timeout: Timeout = 5 seconds
 

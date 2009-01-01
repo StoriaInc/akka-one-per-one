@@ -11,6 +11,7 @@ import akka.cluster.ClusterEvent.CurrentClusterState
 import akka.cluster.ClusterEvent.MemberRemoved
 import akka.cluster.ClusterEvent.MemberUp
 import akka.dispatch.{UnboundedDequeBasedMailbox, BoundedDequeBasedMailbox, RequiresMessageQueue}
+import akka.event.LoggingReceive
 
 
 
@@ -19,8 +20,7 @@ import akka.dispatch.{UnboundedDequeBasedMailbox, BoundedDequeBasedMailbox, Requ
  * Date: 6/13/13
  * Time: 11:37 AM
  */
-trait Proxy extends Actor
-with ActorLogging with Stash {
+trait Proxy extends Actor with ActorLogging with Stash {
 	import context._
 
 	val path: String
@@ -41,7 +41,7 @@ with ActorLogging with Stash {
 	def receiver: Option[ActorSelection]
 
 
-  def receive: Receive = {
+  def receive: Receive = LoggingReceive {
 	  case state: CurrentClusterState => alive(state); unstashAll(); become(alive)
 	  case _ => stash()
   }
@@ -51,10 +51,23 @@ with ActorLogging with Stash {
 		case state: CurrentClusterState ⇒ onClusterState(state)
 		case MemberUp(m) ⇒ onMemberUp(m)
 		case MemberRemoved(m, previousStatus) ⇒ onMemberRemoved(m, previousStatus)
-		case other ⇒ {
-//			log.debug(s"Sending $other to receiver")
-			receiver foreach { _.tell(other, sender) }
-		}
+		case msg ⇒ (process orElse forward)(msg)
+	}
+
+
+	/**
+	 * Forward message to `receiver`
+	 */
+	def forward: Receive = { case msg => receiver foreach (_.tell(msg, sender))}
+
+
+	/**
+	 * Override if you want to add custom behaviour to proxy,
+	 * every unhandled by this method messages will be forwarded to receiver
+	 */
+	def process: Receive = new PartialFunction[Any, Unit] {
+		def apply(v1: Any) {}
+		def isDefinedAt(x: Any): Boolean = false
 	}
 
 
@@ -62,45 +75,46 @@ with ActorLogging with Stash {
     membersByAge = immutable.SortedSet.empty(ageOrdering) ++ state.members.collect {
       case m if !role.isDefined || m.hasRole(role.get) ⇒ m
     }
-	  log.debug(s"onClusterState. Members: $membersByAge")
   }
 
 
   protected def onMemberUp(m: Member) {
     if (!role.isDefined || m.hasRole(role.get)) membersByAge += m
-	  log.debug(s"onMemberUp. Members: $membersByAge")
   }
 
 
   protected def onMemberRemoved(m: Member, previousStatus: MemberStatus) {
     if (!role.isDefined || m.hasRole(role.get)) membersByAge -= m
   }
+}
 
 
+
+
+
+trait LeaderSelector extends Proxy {
+	def leader = membersByAge.headOption map (m ⇒ context.actorSelection(
+			RootActorPath(m.address) / "user" / path))
+}
+
+trait RandomSelector extends Proxy {
+	//TODO: It takes O(n), optimize
+	def random = Random.shuffle(membersByAge.toList).headOption
+			.map (m ⇒ context.actorSelection(
+			RootActorPath(m.address) / "user" / path))
 }
 
 
 class LeaderProxy(
 		override val path: String,
-		override val role: Option[String] = None) extends Proxy {
-	def receiver = {
-		 membersByAge.headOption map (m ⇒ context.actorSelection(
-			RootActorPath(m.address) / "user" / path))
-//		log.debug(s"leader is $l")
-//		l
-	}
-}
+		override val role: Option[String] = None) extends LeaderSelector {
+	def receiver = leader
 
+}
 
 class RandomProxy(
 		override val path: String,
-		override val role: Option[String] = None) extends Proxy {
-	def receiver: Option[ActorSelection] = {
+		override val role: Option[String] = None) extends RandomSelector {
+	def receiver: Option[ActorSelection] = random
 
-		//TODO: It takes O(n), optimize
-		Random.shuffle(membersByAge.toList).headOption map (m ⇒ context.actorSelection(
-			RootActorPath(m.address) / "user" / path))
-//		log.debug(s"member is $l")
-//		l
-	}
 }
