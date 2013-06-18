@@ -1,0 +1,53 @@
+<configuration scan="true">
+
+
+	<appender name="FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+		<append>true</append>
+		<rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+			<fileNamePattern>./logs/%d{yyyy-MM}/application-%d{yyyy-MM-dd}.log</fileNamePattern>
+			<maxHistory>60</maxHistory>
+		</rollingPolicy>
+		<encoder>
+			<pattern>
+				%date - [%level] - from %logger in %thread %n%message%n%xException{full}%n
+			</pattern>
+		</encoder>
+	</appender>
+
+	<appender name="ERROR-FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+		<append>true</append>
+		<rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+			<fileNamePattern>./logs/%d{yyyy-MM}/application-error-%d{yyyy-MM-dd}.log</fileNamePattern>
+			<maxHistory>60</maxHistory>
+		</rollingPolicy>
+		<!-- deny all events with a level below WARN -->
+		<filter class="ch.qos.logback.classic.filter.ThresholdFilter">
+			<level>WARN</level>
+		</filter>
+		<encoder>
+			<pattern>
+				%date - [%level] - from %logger in %thread %n%message%n%xException{full}%n
+			</pattern>
+		</encoder>
+	</appender>
+
+	<appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
+		<withJansi>true</withJansi>
+		<encoder>
+			<pattern>%-50(%highlight([%-5level]) %cyan(%.18logger{0})) - %message%n%xException{full}</pattern>
+			<!--<pattern>%-50(%highlight([%-5level]) %cyan(%logger)) - %message%n%xException{full}</pattern>-->
+		</encoder>
+	</appender>
+
+	<logger name="com.codebranch.akka.sandbox" level="DEBUG" />
+    <logger name="com.codebranch.mahout.sandbox" level="DEBUG" />
+    <logger name="mongo" level="INFO" />
+
+	<!--<root level="DEBUG">-->
+	<root level="INFO">
+		<appender-ref ref="STDOUT" />
+		<appender-ref ref="FILE" />
+		<appender-ref ref="ERROR-FILE"/>
+	</root>
+
+</configuration>
