@@ -42,7 +42,7 @@ with ActorLogging with Stash {
 
 
   def receive: Receive = {
-	  case ev: ClusterDomainEvent => alive(ev); unstashAll(); become(alive)
+	  case state: CurrentClusterState => alive(state); unstashAll(); become(alive)
 	  case _ => stash()
   }
 
