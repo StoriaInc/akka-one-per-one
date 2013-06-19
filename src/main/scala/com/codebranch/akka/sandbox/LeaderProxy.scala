@@ -38,6 +38,8 @@ with ActorLogging with Stash {
     immutable.SortedSet.empty(ageOrdering)
 
 
+	def receiver: Option[ActorSelection]
+
 
   def receive: Receive = {
 	  case ev: ClusterDomainEvent => alive(ev); unstashAll(); become(alive)
@@ -50,14 +52,10 @@ with ActorLogging with Stash {
 		case MemberUp(m) ⇒ onMemberUp(m)
 		case MemberRemoved(m, previousStatus) ⇒ onMemberRemoved(m, previousStatus)
 		case other ⇒ {
-			log.debug(s"Sending $other to receiver")
+//			log.debug(s"Sending $other to receiver")
 			receiver foreach { _.tell(other, sender) }
 		}
 	}
-
-
-
-//  def processMessage: Receive
 
 
   protected def onClusterState(state: CurrentClusterState) {
@@ -79,8 +77,6 @@ with ActorLogging with Stash {
   }
 
 
-	def receiver: Option[ActorSelection]
-
 }
 
 
@@ -88,10 +84,10 @@ class LeaderProxy(
 		override val path: String,
 		override val role: Option[String] = None) extends Proxy {
 	def receiver = {
-		val l = membersByAge.headOption map (m ⇒ context.actorSelection(
+		 membersByAge.headOption map (m ⇒ context.actorSelection(
 			RootActorPath(m.address) / "user" / path))
-		log.debug(s"leader is $l")
-		l
+//		log.debug(s"leader is $l")
+//		l
 	}
 }
 
@@ -100,9 +96,11 @@ class RandomProxy(
 		override val path: String,
 		override val role: Option[String] = None) extends Proxy {
 	def receiver: Option[ActorSelection] = {
-		val l = Random.shuffle(membersByAge).headOption map (m ⇒ context.actorSelection(
+
+		//TODO: It takes O(n), optimize
+		Random.shuffle(membersByAge.toList).headOption map (m ⇒ context.actorSelection(
 			RootActorPath(m.address) / "user" / path))
-		log.debug(s"member is $l")
-		l
+//		log.debug(s"member is $l")
+//		l
 	}
 }

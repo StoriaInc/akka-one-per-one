@@ -64,11 +64,39 @@ object ClusterTestConfig extends MultiNodeConfig
 }
 
 
-trait STMultiNodeSpec extends MultiNodeSpecCallbacks with WordSpec
-	with MustMatchers with BeforeAndAfterAll {
+trait STMultiNodeSpec extends MultiNodeSpecCallbacks
+	with WordSpec with MustMatchers with BeforeAndAfterAll {
 
   override def beforeAll = multiNodeSpecBeforeAll()
   override def afterAll = multiNodeSpecAfterAll()
+}
+
+
+class NodeTest extends TestKit(ActorSystem("node-test-system"))
+	with WordSpec with MustMatchers with BeforeAndAfterAll {
+{
+	"Worker" should {
+		"response with message count" in {
+			val w = system.actorOf(Props[SimpleWorker])
+			val m = ("id", 0)
+				for(i <- 1 to 100){
+					w ! m
+					expectMsg(i)
+				}
+		}
+	}
+
+
+	"ClusterNode" should {
+			val n = TestActorRef[ClusterNode]
+
+
+
+		}
+
+
+
+	}
 }
 
 
@@ -80,6 +108,9 @@ class ClusterTest extends MultiNodeSpec(ClusterTestConfig) with STMultiNodeSpec
   import ClusterTestConfig._
 
   implicit val timeout: Timeout = 5 seconds
+
+
+
 
   "Cluster" should {
     "startup properly and join all the nodes" in within(15 seconds) {
@@ -99,7 +130,8 @@ class ClusterTest extends MultiNodeSpec(ClusterTestConfig) with STMultiNodeSpec
 
       Cluster(system).unsubscribe(testActor)
 
-      testConductor.enter("all-up")
+//      testConductor.enter("all-up")
+//	    initListeners(system)
 	    enterBarrier("startup")
     }
 
@@ -111,30 +143,99 @@ class ClusterTest extends MultiNodeSpec(ClusterTestConfig) with STMultiNodeSpec
 	      enterBarrier("deployed")
       }
       runOn(node2) {
-//	      system.actorOf(Props(new ClusterNode),"ClusterNode")
 				val n = system.actorOf(Props(new ClusterNode),"ClusterNode")
 	      enterBarrier("deployed")
       }
+//	    runOn(node3) {
+		    //				val n = system.actorOf(Props(new ClusterNode),"ClusterNode")
+//		    enterBarrier("deployed")
+//	    }
     }
+
+
 
 
 	  "Create actor per key" in {
       runOn(node3) {
 	      enterBarrier("deployed")
-	      val member = system.actorOf(Props(new RandomProxy("ClusterNode"))
-					.withMailbox("proxy-mailbox"),
-		      name = "random")
+	      val n = system.actorOf(Props(new ClusterNode),"ClusterNode")
+//				val leader = system.actorOf(Props(new LeaderProxy("ClusterNode"))
+//					.withMailbox("proxy-mailbox"),
+//					name = "leader")
+//	      val member = leader
+//	      val member = n
 
-	      for(a <- 1 to 10) {
-		      for(m <- 1 to 10) {
-			      member ! (a.toString, m)
-			      expectMsgClass(15 seconds, classOf[Int]) must be (m)
+
+	      import akka.actor.ActorDSL._
+
+
+	      val tester = actor(new Act {
+		      val w = 10
+		      val t = 50
+		      var counter = w*t
+		      var starter: ActorRef = _
+		      val member = system.actorOf(Props(new RandomProxy("ClusterNode"))
+				      .withMailbox("proxy-mailbox"),
+			      name = "random")
+
+		      become {
+			      case "start" => {
+				      starter = sender
+				      for(a <- 1 to w) {
+					      for(m <- 1 to t) {
+						      member ! (a.toString, m)
+					      }
+				      }
+			      }
+			      case x: Int => {
+				      counter -= 1
+				      if(counter == 0)
+					      starter ! "finish"
+			      }
 		      }
-	      }
+	      })
+
+	      tester ! "start"
+	      expectMsg(10 seconds, "finish")
+
+
+//
+
+
+
       }
 	    enterBarrier("finished")
     }
   }
+
+
+
+	def initListeners(actorSystem: ActorSystem) {
+
+
+		val clusterListener = actorSystem.actorOf(Props(new Actor with ActorLogging {
+			def receive = {
+				case state: CurrentClusterState ⇒
+					log.info("Current members: {}", state.members)
+				case MemberUp(member) ⇒
+					log.info("Member is Up: {}", member)
+				case UnreachableMember(member) ⇒
+					log.info("Member detected as unreachable: {}", member)
+				case ev: ClusterDomainEvent ⇒
+			}
+		}), name = "clusterListener")
+
+
+
+		Cluster(actorSystem).subscribe(clusterListener, classOf[ClusterDomainEvent])
+		val deadLetterListener = actorSystem.actorOf(Props(new Actor with ActorLogging {
+			def receive = {
+				case d: DeadLetter => log.info(d.toString)
+			}
+		}))
+
+		actorSystem.eventStream.subscribe(deadLetterListener, classOf[DeadLetter])
+	}
 }
 
 

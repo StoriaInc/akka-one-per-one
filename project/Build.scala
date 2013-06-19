@@ -9,7 +9,7 @@ import akka.sbt.AkkaKernelPlugin.{ Dist, outputDirectory, distJvmOptions}
 
 object ApplicationBuild extends Build
 {
-	val appName         = "akka-sandbox"
+	val appName         = "one-for-one"
 
   lazy val multiJvmSettings = SbtMultiJvm.multiJvmSettings ++ Seq(
     // make sure that MultiJvm test are compiled by the default test compilation
@@ -43,26 +43,14 @@ object ApplicationBuild extends Build
       libraryDependencies ++= appDependencies
     )
 
-//  externalResolvers <<= resolvers map { rs =>
-//    Resolver.withDefaultResolvers(rs, mavenCentral = false)
-//  }
-
-//  val akkaVersion = "2.2-SNAPSHOT"
-//  val akkaVersion = "2.2-M3"
-  	val AkkaVersion = "2.2.0-RC1"
+	val AkkaVersion = "2.2.0-RC1"
 
 	val appDependencies = Seq(
     "com.typesafe" % "config" % "1.0.0",
     "com.typesafe.akka" %% "akka-actor" % AkkaVersion,
     "com.typesafe.akka" %% "akka-remote" % AkkaVersion,
     "com.typesafe.akka" %% "akka-cluster" % AkkaVersion,
-//    "com.typesafe.akka" %% "akka-cluster-experimental" % akkaVersion,
     "com.typesafe.akka" %% "akka-contrib" % AkkaVersion,
-
-
-  //Our mongodb ORM
-//    "codebranch" %% "mongo" % "1.0-SNAPSHOT",
-
 
 	//Logging
 	  "com.typesafe.akka" %% "akka-slf4j" % AkkaVersion,
@@ -71,10 +59,6 @@ object ApplicationBuild extends Build
   //Testing
     "com.typesafe.akka" %% "akka-multi-node-testkit" % AkkaVersion,
     "org.scalatest" %% "scalatest" % "1.9" % "test"
-
-  //Mahaout dependencies
-//  "org.apache.mahout" % "mahout-core" % "0.7",
-//  "org.apache.mahout" % "mahout-integration" % "0.7"
 	)
 
 	val main = Project(

@@ -4,6 +4,7 @@ package com.codebranch.akka.sandbox
 import akka.actor.{ActorRef, Props, ActorLogging, Actor}
 import akka.util.Timeout
 import concurrent.duration._
+import akka.event.LoggingReceive
 
 
 
@@ -14,15 +15,6 @@ import concurrent.duration._
  */
 
 	class ClusterNode extends Node {
-		override def preStart() {
-			super.preStart()
-			log.info(s"ClusterNode preStart. Path: ${self.path}")
-		}
-		override def postStop() {
-			super.postStop()
-			log.info("ClusterNode postStop")
-		}
-
 
 		implicit val timeout: Timeout = 5 seconds
 
@@ -47,15 +39,11 @@ import concurrent.duration._
 	}
 
 
-	class SimpleWorker extends Actor with ActorLogging {
+	class SimpleWorker extends Actor {
 		var messageCount = 0
-		override def preStart() {
-			log.info("SimpleWorker preStart")
-		}
 
-		def receive: Actor.Receive = {
+		def receive: Receive = LoggingReceive {
 			case x => {
-				log.info(s"SimpleWorker receive: $x")
 				messageCount += 1
 				sender ! messageCount
 			}

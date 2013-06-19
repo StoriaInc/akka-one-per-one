@@ -6,6 +6,8 @@ import akka.routing.FromConfig
 import akka.pattern.{ask, pipe}
 import akka.util.Timeout
 import akka.event.LoggingReceive
+import akka.contrib.pattern.DistributedPubSubExtension
+import akka.contrib.pattern.DistributedPubSubMediator.{SubscribeAck, Subscribe, Publish}
 
 
 
@@ -20,49 +22,70 @@ abstract class Node extends Actor with ActorLogging {
 
   type K = String
 
+	val workerAdded = WorkerAdded.getClass.getName
 
-  implicit val timeout: Timeout
 
-  val workers = mutable.Map[K, ActorRef]()
+	implicit val timeout: Timeout
+
+	val mediator = DistributedPubSubExtension(context.system).mediator
+
+	val workers = mutable.Map[K, ActorRef]()
   val pending = mutable.Map[K, List[(ActorRef,Any)]]()
 	val leader = actorOf(Props(
-		new LeaderProxy("ClusterNode"))
-//			.withDispatcher("proxy-dispatcher"),
-			.withMailbox("proxy-mailbox"),
+		new LeaderProxy("ClusterNode")).withMailbox("proxy-mailbox"),
 		name = "leader")
 	val member = actorOf(Props(
-		new RandomProxy("ClusterNode"))
-//			.withDispatcher("proxy-dispatcher"),
-			.withMailbox("proxy-mailbox"),
+		new RandomProxy("ClusterNode")).withMailbox("proxy-mailbox"),
 		name = "random")
-//  val router = actorOf(Props[this.type].withRouter(FromConfig), "MyCoolRouter")
+
+
+	override def preStart() {
+		mediator ! Subscribe(workerAdded, self)
+		leader ! GetWorkers
+	}
 
 
   def receive: Receive = LoggingReceive {
+	  case Workers(w) => workers ++= w
+
 	  case m @ WorkerNotFound(msg, r) => {
-	    log.debug(s"Node got $m")
 	    withMessage(msg) { key =>
-			    pending.get(key) match {
-				    case Some(p) =>
-					    pending += (key -> ((r -> msg) :: p))
+			    workers.get(key) match {
+				    case Some(w) => w ? msg pipeTo r
 				    case None =>
-					    pending += (key -> List(r -> msg))
-					    member ! CreateWorker(msg)
+					    pending.get(key) match {
+						    case Some(p) =>
+							    pending += (key -> ((r -> msg) :: p))
+						    case None =>
+							    pending += (key -> List(r -> msg))
+							    member ! CreateWorker(msg)
+					    }
 			    }
 	    }
-    }
-    case w @ NewWorker(ref, key) =>
-	    log.debug(s"Node got $w")
+	  }
+
+	  case w @ NewWorker(ref, key) =>
 	    pending.getOrElse(key, Nil).foreach { case (requester, message) => {
-        log.debug(s"Sending pending requests for $requester")
+//        log.debug(s"Sending pending requests for $requester")
 		    ref ? message pipeTo requester
       }
       pending -= key
       workers += (key -> ref)
+		  mediator ! Publish(workerAdded, WorkerAdded(ref, key))
     }
+
     case CreateWorker(msg) => withMessage(msg) { key =>
       sender ! NewWorker(createWorker(key), key)
     }
+
+		case WorkerAdded(w, k) => workers += (k -> w)
+
+	  case SubscribeAck(Subscribe(`workerAdded`, `self`)) => {
+		  log.debug("subscribed")
+	  }
+
+		case GetWorkers => sender ! Workers(workers.toMap)
+
     case msg => withMessage(msg) { key =>
       workers.get(key) match {
         case Some(w) => w ? msg pipeTo sender
@@ -109,5 +132,8 @@ object Node {
   case class WorkerNotFound(msg: Any, requester: ActorRef)
   case class CreateWorker(msg: Any)
   case class NewWorker(worker: ActorRef, key: String)
+	case class WorkerAdded(worker: ActorRef, key: String)
+	case object GetWorkers
+	case class Workers(workers: Map[String, ActorRef])
 //	case class Result(res: Any)
 }
