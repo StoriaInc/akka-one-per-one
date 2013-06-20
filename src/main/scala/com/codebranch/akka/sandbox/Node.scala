@@ -20,7 +20,7 @@ import akka.contrib.pattern.DistributedPubSubMediator.SubscribeAck
  * Date: 6/13/13
  * Time: 12:21 PM
  */
-abstract class Node extends Proxy with LeaderSelector with RandomSelector {
+abstract class Node extends Proxy with LeaderSelector {
   import Node._
   import context._
 
@@ -29,9 +29,9 @@ abstract class Node extends Proxy with LeaderSelector with RandomSelector {
 	val workerAdded = WorkerAdded.getClass.getName
 	val workers = mutable.Map[K, ActorRef]()
 	val pending = mutable.Map[K, List[(ActorRef,Any)]]()
-	def member = random
+	//TODO: move member choice implementation
+	def member: Option[ActorSelection]
 
-	// Will be never used, because receiver is None
 	override val path = self.path.name
 
 	def receiver: Option[ActorSelection] = None

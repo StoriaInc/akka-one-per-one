@@ -14,42 +14,46 @@ import akka.event.LoggingReceive
  * Time: 5:00 PM
  */
 
-	class ClusterNode( override val role: Option[String] = None)
-		extends Node {
+class ClusterNode(val role: Option[String] = None)
+		extends Node with RandomSelector
+{
 
-		implicit val timeout: Timeout = 5 seconds
+	implicit val timeout: Timeout = 5 seconds
 
-		/**
-		 * Try to get key from message
-		 * @param msg
-		 * @return
-		 */
-		protected def extractKey(msg: Any): Option[String] = msg match {
-			case (key: String, _) => Some(key)
-			case _ => None
-		}
+	def member = random
 
-		/**
-		 * Create actual worker for key
-		 * @return
-		 */
-		protected def createWorker(key: String): ActorRef =
-			context.actorOf(Props[SimpleWorker], key)
 
-		//  val path: String = "ClusterNode"
+	/**
+	 * Try to get key from message
+	 * @param msg
+	 * @return
+	 */
+	protected def extractKey(msg: Any): Option[String] = msg match {
+		case (key: String, _) => Some(key)
+		case _ => None
 	}
 
+	/**
+	 * Create actual worker for key
+	 * @return
+	 */
+	protected def createWorker(key: String): ActorRef =
+		context.actorOf(Props[SimpleWorker], key)
 
-	class SimpleWorker extends Actor {
-		var messageCount = 0
+	//  val path: String = "ClusterNode"
+}
 
-		def receive: Receive = LoggingReceive {
-			case x => {
-				messageCount += 1
-				sender ! messageCount
-			}
+
+class SimpleWorker extends Actor {
+	var messageCount = 0
+
+	def receive: Receive = LoggingReceive {
+		case x => {
+			messageCount += 1
+			sender ! messageCount
 		}
 	}
+}
 
 
 

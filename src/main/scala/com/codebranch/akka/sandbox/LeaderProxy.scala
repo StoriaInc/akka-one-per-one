@@ -24,7 +24,7 @@ trait Proxy extends Actor with ActorLogging with Stash {
 	import context._
 
 	val path: String
-	val role: Option[String] = None
+	val role: Option[String]
   // subscribe to MemberEvent, re-subscribe when restart
 
   override def preStart(): Unit =
@@ -108,7 +108,7 @@ trait RandomSelector extends Proxy {
 class LeaderProxy(
 		override val path: String,
 		override val role: Option[String] = None) extends LeaderSelector {
-	def receiver = leader
+	def receiver: Option[ActorSelection]= leader
 
 }
 
