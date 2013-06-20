@@ -130,12 +130,8 @@ class ClusterTest extends MultiNodeSpec(ClusterTestConfig) with STMultiNodeSpec
 
       Cluster(system).unsubscribe(testActor)
 
-//      testConductor.enter("all-up")
-//	    initListeners(system)
 	    enterBarrier("startup")
     }
-
-	  val nodePath = "ClusterNode"
 
     "start a regular nodes with necessary actors" in {
       runOn(node1) {
@@ -150,14 +146,7 @@ class ClusterTest extends MultiNodeSpec(ClusterTestConfig) with STMultiNodeSpec
 		      name = "ClusterNode")
 	      enterBarrier("deployed")
       }
-//	    runOn(node3) {
-		    //				val n = system.actorOf(Props(new ClusterNode),"ClusterNode")
-//		    enterBarrier("deployed")
-//	    }
     }
-
-
-
 
 	  "Create actor per key" in {
       runOn(node3) {
@@ -165,19 +154,12 @@ class ClusterTest extends MultiNodeSpec(ClusterTestConfig) with STMultiNodeSpec
 	      val n = system.actorOf(Props(new ClusterNode())
 			      .withMailbox("proxy-mailbox"),
 		      name = "ClusterNode")
-//				val leader = system.actorOf(Props(new LeaderProxy("ClusterNode"))
-//					.withMailbox("proxy-mailbox"),
-//					name = "leader")
-//	      val member = leader
-//	      val member = n
-
-
 	      import akka.actor.ActorDSL._
 
 
 	      val tester = actor(new Act {
-		      val w = 3
-		      val t = 5
+		      val w = 50
+		      val t = 10
 		      var counter = w*t
 		      var starter: ActorRef = _
 		      val member = system.actorOf(Props(new RandomProxy("ClusterNode"))
@@ -206,35 +188,6 @@ class ClusterTest extends MultiNodeSpec(ClusterTestConfig) with STMultiNodeSpec
 	    enterBarrier("finished")
     }
   }
-
-
-
-	def initListeners(actorSystem: ActorSystem) {
-
-
-		val clusterListener = actorSystem.actorOf(Props(new Actor with ActorLogging {
-			def receive = {
-				case state: CurrentClusterState ⇒
-					log.info("Current members: {}", state.members)
-				case MemberUp(member) ⇒
-					log.info("Member is Up: {}", member)
-				case UnreachableMember(member) ⇒
-					log.info("Member detected as unreachable: {}", member)
-				case ev: ClusterDomainEvent ⇒
-			}
-		}), name = "clusterListener")
-
-
-
-		Cluster(actorSystem).subscribe(clusterListener, classOf[ClusterDomainEvent])
-		val deadLetterListener = actorSystem.actorOf(Props(new Actor with ActorLogging {
-			def receive = {
-				case d: DeadLetter => log.info(d.toString)
-			}
-		}))
-
-		actorSystem.eventStream.subscribe(deadLetterListener, classOf[DeadLetter])
-	}
 }
 
 
