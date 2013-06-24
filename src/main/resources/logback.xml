@@ -40,8 +40,6 @@
 	</appender>
 
 	<logger name="com.codebranch.akka.sandbox" level="DEBUG" />
-    <logger name="com.codebranch.mahout.sandbox" level="DEBUG" />
-    <logger name="mongo" level="INFO" />
 
 	<!--<root level="DEBUG">-->
 	<root level="INFO">
