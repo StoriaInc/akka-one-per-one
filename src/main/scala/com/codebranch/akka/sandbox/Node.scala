@@ -32,7 +32,7 @@ abstract class Node extends Proxy with LeaderSelector {
 	//TODO: move member choice implementation
 	def member: Option[ActorSelection]
 
-	override val path = self.path.name
+	override val path = self.path.elements.mkString("/")
 
 	def receiver: Option[ActorSelection] = None
 
@@ -56,7 +56,7 @@ abstract class Node extends Proxy with LeaderSelector {
 				    case None =>
 					    pending.get(key) match {
 						    case Some(p) =>
-							    pending += (key -> ((r -> msg) :: p))
+							    pending += (key -> (r -> msg :: p))
 						    case None =>
 							    pending += (key -> List(r -> msg))
 							    member foreach (_ ! CreateWorker(msg))
@@ -87,7 +87,10 @@ abstract class Node extends Proxy with LeaderSelector {
     case msg => withMessage(msg) { key =>
       workers.get(key) match {
         case Some(w) => w ? msg pipeTo sender
-        case None => leader foreach (_ ! WorkerNotFound(msg, sender))
+        case None => {
+	        log.debug(s"asking leader $leader create worker for $msg")
+	        leader foreach (_ ! WorkerNotFound(msg, sender))
+        }
       }
     }
   }

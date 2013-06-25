@@ -42,7 +42,12 @@ trait Proxy extends Actor with ActorLogging with Stash {
 
 
   def receive: Receive = LoggingReceive {
-	  case state: CurrentClusterState => alive(state); unstashAll(); become(alive)
+	  case state: CurrentClusterState => {
+		  alive(state)
+		  unstashAll()
+		  log.debug(s"became alive")
+		  become(alive)
+	  }
 	  case _ => stash()
   }
 
@@ -58,7 +63,9 @@ trait Proxy extends Actor with ActorLogging with Stash {
 	/**
 	 * Forward message to `receiver`
 	 */
-	def forward: Receive = { case msg => receiver foreach (_.tell(msg, sender))}
+	def forward: Receive = { case msg =>
+		receiver foreach (_.tell(msg, sender))
+	}
 
 
 	/**
@@ -75,33 +82,33 @@ trait Proxy extends Actor with ActorLogging with Stash {
     membersByAge = immutable.SortedSet.empty(ageOrdering) ++ state.members.collect {
       case m if !role.isDefined || m.hasRole(role.get) ⇒ m
     }
+	  log.debug(s"members is $membersByAge")
   }
 
 
   protected def onMemberUp(m: Member) {
     if (!role.isDefined || m.hasRole(role.get)) membersByAge += m
+	  log.debug(s"members is $membersByAge")
   }
 
 
   protected def onMemberRemoved(m: Member, previousStatus: MemberStatus) {
     if (!role.isDefined || m.hasRole(role.get)) membersByAge -= m
+	  log.debug(s"members is $membersByAge")
   }
 }
 
 
-
-
-
 trait LeaderSelector extends Proxy {
 	def leader = membersByAge.headOption map (m ⇒ context.actorSelection(
-			RootActorPath(m.address) / "user" / path))
+	RootActorPath(m.address) / path.split("/")))
 }
 
 trait RandomSelector extends Proxy {
 	//TODO: It takes O(n), optimize
 	def random = Random.shuffle(membersByAge.toList).headOption
 			.map (m ⇒ context.actorSelection(
-			RootActorPath(m.address) / "user" / path))
+		RootActorPath(m.address) / path.split("/")))
 }
 
 
@@ -109,12 +116,11 @@ class LeaderProxy(
 		override val path: String,
 		override val role: Option[String] = None) extends LeaderSelector {
 	def receiver: Option[ActorSelection]= leader
-
 }
+
 
 class RandomProxy(
 		override val path: String,
 		override val role: Option[String] = None) extends RandomSelector {
 	def receiver: Option[ActorSelection] = random
-
 }
