@@ -74,28 +74,17 @@ trait STMultiNodeSpec extends MultiNodeSpecCallbacks
 
 class NodeTest extends TestKit(ActorSystem("node-test-system"))
 	with WordSpec with MustMatchers with BeforeAndAfterAll {
-{
-	"Worker" should {
-		"response with message count" in {
-			val w = system.actorOf(Props[SimpleWorker])
-			val m = ("id", 0)
+	{
+		"Worker" should {
+			"response with message count" in {
+				val w = system.actorOf(Props[SimpleWorker])
+				val m = ("id", 0)
 				for(i <- 1 to 100){
 					w ! m
 					expectMsg(i)
 				}
+			}
 		}
-	}
-
-
-	"ClusterNode" should {
-			val n = TestActorRef[ClusterNode]
-
-
-
-		}
-
-
-
 	}
 }
 
@@ -162,7 +151,7 @@ class ClusterTest extends MultiNodeSpec(ClusterTestConfig) with STMultiNodeSpec
 		      val t = 10
 		      var counter = w*t
 		      var starter: ActorRef = _
-		      val member = system.actorOf(Props(new RandomProxy("ClusterNode"))
+		      val member = system.actorOf(Props(new RandomProxy("/user/ClusterNode"))
 				      .withMailbox("proxy-mailbox"),
 			      name = "random")
 
