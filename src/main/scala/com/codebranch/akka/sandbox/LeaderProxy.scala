@@ -19,33 +19,38 @@ import akka.event.LoggingReceive
  * User: alexey
  * Date: 6/13/13
  * Time: 11:37 AM
+ *
+ * Proxy listens for cluster events and keep track of members with supplied `role`.
+ * Forward other messages to `receiver`.
  */
 trait Proxy extends Actor with ActorLogging with Stash {
 	import context._
 
 	val path: String
 	val role: Option[String]
-  // subscribe to MemberEvent, re-subscribe when restart
 
+  // subscribe to MemberEvent, re-subscribe when restart
   override def preStart(): Unit =
     Cluster(context.system).subscribe(self, classOf[MemberEvent])
   override def postStop(): Unit =
     Cluster(context.system).unsubscribe(self)
 
   // sort by age, oldest first
-  val ageOrdering = Ordering.fromLessThan[Member] { (a, b) ⇒ a.isOlderThan(b) }
-  var membersByAge: immutable.SortedSet[Member] =
-    immutable.SortedSet.empty(ageOrdering)
-
+  val ageOrdering = { (a: Member, b: Member) ⇒ a.isOlderThan(b) }
+  var membersByAge = Vector[Member]()
 
 	def receiver: Option[ActorSelection]
 
 
+	/**
+	 * Until [[akka.cluster.ClusterEvent.CurrentClusterState]] isn't received,
+	 * stash all other messages
+	 * @return
+	 */
   def receive: Receive = LoggingReceive {
 	  case state: CurrentClusterState => {
 		  alive(state)
 		  unstashAll()
-		  log.debug(s"became alive")
 		  become(alive)
 	  }
 	  case _ => stash()
@@ -79,22 +84,21 @@ trait Proxy extends Actor with ActorLogging with Stash {
 
 
   protected def onClusterState(state: CurrentClusterState) {
-    membersByAge = immutable.SortedSet.empty(ageOrdering) ++ state.members.collect {
+    membersByAge = state.members.collect {
       case m if !role.isDefined || m.hasRole(role.get) ⇒ m
-    }
-	  log.debug(s"members is $membersByAge")
+    }.toVector.sortWith(ageOrdering)
   }
 
 
   protected def onMemberUp(m: Member) {
-    if (!role.isDefined || m.hasRole(role.get)) membersByAge += m
-	  log.debug(s"members is $membersByAge")
+    if (!role.isDefined || m.hasRole(role.get))
+	    membersByAge = (m +: membersByAge).sortWith(ageOrdering)
   }
 
 
   protected def onMemberRemoved(m: Member, previousStatus: MemberStatus) {
-    if (!role.isDefined || m.hasRole(role.get)) membersByAge -= m
-	  log.debug(s"members is $membersByAge")
+    if (!role.isDefined || m.hasRole(role.get))
+	    membersByAge = membersByAge.filterNot(_ == m)
   }
 }
 
@@ -104,14 +108,27 @@ trait LeaderSelector extends Proxy {
 	RootActorPath(m.address) / path.split("/")))
 }
 
+
 trait RandomSelector extends Proxy {
-	//TODO: It takes O(n), optimize
-	def random = Random.shuffle(membersByAge.toList).headOption
-			.map (m ⇒ context.actorSelection(
-		RootActorPath(m.address) / path.split("/")))
+
+	def random = if(membersByAge.isEmpty)
+		None
+	else
+		Some(context.actorSelection(
+			RootActorPath(membersByAge(Random.nextInt(membersByAge.length)).address)
+				/ path.split("/")))
+
+//	def random = Random.shuffle(membersByAge.toList).headOption
+//			.map (m ⇒ context.actorSelection(
+//		RootActorPath(m.address) / path.split("/")))
 }
 
 
+/**
+ * All messages will be forwarded to oldest cluster member with `role`
+ * @param path path to actor on node, e.g. `/user/myCoolActor`
+ * @param role akka.cluster.role of member
+ */
 class LeaderProxy(
 		override val path: String,
 		override val role: Option[String] = None) extends LeaderSelector {
@@ -119,6 +136,11 @@ class LeaderProxy(
 }
 
 
+/**
+ * All messages will be forwarded to random cluster member with `role`
+ * @param path path to actor on node, e.g. `/user/myCoolActor`
+ * @param role akka.cluster.role of member
+ */
 class RandomProxy(
 		override val path: String,
 		override val role: Option[String] = None) extends RandomSelector {
