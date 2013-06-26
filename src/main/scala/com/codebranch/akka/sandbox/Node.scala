@@ -29,11 +29,11 @@ abstract class Node extends Proxy with LeaderSelector {
 	val workerAdded = WorkerAdded.getClass.getName
 	val workers = mutable.Map[K, ActorRef]()
 	val pending = mutable.Map[K, List[(ActorRef,Any)]]()
-	//TODO: move member choice implementation
 	def member: Option[ActorSelection]
 
 	override val path = self.path.elements.mkString("/")
 
+	//Node never forward message
 	def receiver: Option[ActorSelection] = None
 
 	implicit val timeout: Timeout
@@ -49,7 +49,7 @@ abstract class Node extends Proxy with LeaderSelector {
   override def process: Receive = {
 	  case Workers(w) => workers ++= w
 
-	  case m @ WorkerNotFound(msg, r) => {
+	  case WorkerNotFound(msg, r) => {
 	    withMessage(msg) { key =>
 			    workers.get(key) match {
 				    case Some(w) => w ? msg pipeTo r
@@ -65,7 +65,7 @@ abstract class Node extends Proxy with LeaderSelector {
 	    }
 	  }
 
-	  case w @ NewWorker(ref, key) =>
+	  case NewWorker(ref, key) =>
 	    pending.getOrElse(key, Nil).foreach { case (requester, message) => {
 		    ref ? message pipeTo requester
       }
@@ -88,7 +88,7 @@ abstract class Node extends Proxy with LeaderSelector {
       workers.get(key) match {
         case Some(w) => w ? msg pipeTo sender
         case None => {
-	        log.debug(s"asking leader $leader create worker for $msg")
+//	        log.debug(s"asking leader $leader create worker for $msg")
 	        leader foreach (_ ! WorkerNotFound(msg, sender))
         }
       }
@@ -121,6 +121,7 @@ abstract class Node extends Proxy with LeaderSelector {
    */
   protected def extractKey(msg: Any):Option[K]
 
+
   /**
    * Create actual worker for key
    * @return
@@ -136,5 +137,4 @@ object Node {
 	case class WorkerAdded(worker: ActorRef, key: String)
 	case object GetWorkers
 	case class Workers(workers: Map[String, ActorRef])
-//	case class Result(res: Any)
 }
