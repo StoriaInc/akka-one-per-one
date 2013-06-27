@@ -24,11 +24,10 @@ abstract class Node extends Proxy with LeaderSelector {
   import Node._
   import context._
 
-  type K = String
 	val mediator = DistributedPubSubExtension(context.system).mediator
 	val workerAdded = WorkerAdded.getClass.getName
-	val workers = mutable.Map[K, ActorRef]()
-	val pending = mutable.Map[K, List[(ActorRef,Any)]]()
+	val workers = mutable.Map[String, ActorRef]()
+	val pending = mutable.Map[String, List[(ActorRef,Any)]]()
 	def member: Option[ActorSelection]
 
 	override val path = self.path.elements.mkString("/")
@@ -50,7 +49,7 @@ abstract class Node extends Proxy with LeaderSelector {
 	  case Workers(w) => workers ++= w
 
 	  case WorkerNotFound(msg, r) => {
-	    withMessage(msg) { key =>
+	    val key = extractKey(msg)
 			    workers.get(key) match {
 				    case Some(w) => w ? msg pipeTo r
 				    case None =>
@@ -63,7 +62,7 @@ abstract class Node extends Proxy with LeaderSelector {
 					    }
 			    }
 	    }
-	  }
+
 
 	  case NewWorker(ref, key) =>
 	    pending.getOrElse(key, Nil).foreach { case (requester, message) => {
@@ -74,7 +73,8 @@ abstract class Node extends Proxy with LeaderSelector {
 		  mediator ! Publish(workerAdded, WorkerAdded(ref, key))
     }
 
-    case CreateWorker(msg) => withMessage(msg) { key =>
+    case CreateWorker(msg) => {
+	    val key = extractKey(msg)
       sender ! NewWorker(createWorker(key), key)
     }
 
@@ -84,7 +84,8 @@ abstract class Node extends Proxy with LeaderSelector {
 
 		case GetWorkers => sender ! Workers(workers.toMap)
 
-    case msg => withMessage(msg) { key =>
+    case msg: ActorId => {
+	    val key = extractKey(msg)
       workers.get(key) match {
         case Some(w) => w ? msg pipeTo sender
         case None => {
@@ -97,44 +98,31 @@ abstract class Node extends Proxy with LeaderSelector {
 
 
   /**
-   * If we can extract key from message, then exec body with this key,
-   * else send it to deadLetter
-   * @param msg
-   * @param body
-   * @return
-   */
-  private def withMessage(msg: Any)(body: K => Unit) {
-    extractKey(msg) match {
-      case Some(key) => body(key)
-      case None => {
-	      log.warning(s"couldn't get key from message $msg")
-	      system.deadLetters ! msg
-      }
-    }
-  }
-
-
-  /**
    * Try to get key from message
    * @param msg
    * @return
    */
-  protected def extractKey(msg: Any):Option[K]
+  protected def extractKey(msg: ActorId): String = msg.actorId
 
 
   /**
    * Create actual worker for key
    * @return
    */
-  protected def createWorker(key: K): ActorRef
+  protected def createWorker(key: String): ActorRef
 }
 
 
 object Node {
-  case class WorkerNotFound(msg: Any, requester: ActorRef)
-  case class CreateWorker(msg: Any)
+  case class WorkerNotFound(msg: ActorId, requester: ActorRef)
+  case class CreateWorker(msg: ActorId)
   case class NewWorker(worker: ActorRef, key: String)
 	case class WorkerAdded(worker: ActorRef, key: String)
 	case object GetWorkers
 	case class Workers(workers: Map[String, ActorRef])
+	case class Task(msg : ActorId)
+}
+
+trait ActorId {
+	def actorId: String
 }

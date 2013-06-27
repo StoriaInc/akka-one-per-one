@@ -160,7 +160,7 @@ class ClusterTest extends MultiNodeSpec(ClusterTestConfig) with STMultiNodeSpec
 				      starter = sender
 				      for(a <- 1 to w) {
 					      for(m <- 1 to t) {
-						      member ! (a.toString, m)
+						      member ! Msg(a.toString)
 					      }
 				      }
 			      }

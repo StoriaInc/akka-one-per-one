@@ -44,6 +44,11 @@ class ClusterNode(val role: Option[String] = None)
 }
 
 
+case class Msg(id: String) extends ActorId {
+	def actorId = id
+}
+
+
 class SimpleWorker extends Actor {
 	var messageCount = 0
 
