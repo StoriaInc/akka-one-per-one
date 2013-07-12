@@ -28,6 +28,7 @@ import ExecutionContext.Implicits.global
 
 import java.io._
 import akka.actor.Status.Success
+import java.util.UUID
 
 
 
@@ -96,7 +97,7 @@ class ClusterTest extends MultiNodeSpec(ClusterTestConfig) with STMultiNodeSpec
 
   import ClusterTestConfig._
 
-  implicit val timeout: Timeout = 5 seconds
+  implicit val timeout: Timeout = 100 seconds
 
 
 
@@ -123,44 +124,36 @@ class ClusterTest extends MultiNodeSpec(ClusterTestConfig) with STMultiNodeSpec
     }
 
     "start a regular nodes with necessary actors" in {
-      runOn(node1) {
-	      val n = system.actorOf(Props(new ClusterNode())
-			      .withMailbox("proxy-mailbox"),
-		      name = "ClusterNode")
-	      enterBarrier("deployed")
-      }
-      runOn(node2) {
-	      val n = system.actorOf(Props(new ClusterNode())
+      runOn(node1, node2) {
+	      system.actorOf(Props(new ClusterNode(Some("backend")))
 			      .withMailbox("proxy-mailbox"),
 		      name = "ClusterNode")
 	      enterBarrier("deployed")
       }
     }
 
-	  "Create actor per key" in {
+	  "create actor per key and process at least 100 messages per second" in {
       runOn(node3) {
 	      enterBarrier("deployed")
-	      val n = system.actorOf(Props(new ClusterNode())
-			      .withMailbox("proxy-mailbox"),
-		      name = "ClusterNode")
 	      import akka.actor.ActorDSL._
 
-
 	      val tester = actor(new Act {
-		      val w = 50
+		      //number of workers
+		      val w = 10000
+		      //number of tasks
 		      val t = 10
 		      var counter = w*t
 		      var starter: ActorRef = _
-		      val member = system.actorOf(Props(new RandomProxy("/user/ClusterNode"))
-				      .withMailbox("proxy-mailbox"),
-			      name = "random")
+		      val proxy = system.actorOf(Props(
+			      new RandomProxy("/user/ClusterNode", Some("backend")))
+				      .withMailbox("proxy-mailbox"))
 
 		      become {
 			      case "start" => {
 				      starter = sender
 				      for(a <- 1 to w) {
 					      for(m <- 1 to t) {
-						      member ! Msg(a.toString)
+						      proxy ! Msg(a.toString)
 					      }
 				      }
 			      }
@@ -172,10 +165,45 @@ class ClusterTest extends MultiNodeSpec(ClusterTestConfig) with STMultiNodeSpec
 		      }
 	      })
 	      tester ! "start"
-	      expectMsg(10 seconds, "finish")
+	      expectMsg(1000 seconds, "finish")
       }
-	    enterBarrier("finished")
     }
+
+
+	  "monitor for worker shutdowns" in {
+
+		  runOn(node3) {
+			   val proxy = system.actorOf(Props(
+			      new RandomProxy("/user/ClusterNode", Some("backend")))
+				      .withMailbox("proxy-mailbox"))
+
+			  val workerId = UUID.randomUUID().toString
+
+			  //create worker
+			  proxy ! Msg(workerId)
+			  expectMsg(1)
+			  //worker throw an exception
+			  proxy ! Msg(workerId, "restart")
+
+			  //wait for worker died and restart
+			  Thread.sleep(1000)
+
+			  //check that next message will be handled
+			  proxy ! Msg(workerId)
+			  expectMsg(1)
+
+			  //shutdown worker
+			  proxy ! Msg(workerId, "terminate")
+
+			  //wait for worker died and removed from workers
+			  Thread.sleep(1000)
+
+			  //check that next message will be handled
+			  proxy ! Msg(workerId)
+			  expectMsg(1)
+		  }
+		  enterBarrier("finished")
+	  }
   }
 }
 

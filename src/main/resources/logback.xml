@@ -39,13 +39,13 @@
 		</encoder>
 	</appender>
 
-	<logger name="com.codebranch.akka.sandbox" level="DEBUG" />
+	<logger name="com.codebranch.akka.sandbox" level="INFO" />
 
-	<root level="DEBUG">
-	<!--<root level="INFO">-->
+	<!--<root level="DEBUG">-->
+	<root level="INFO">
 		<appender-ref ref="STDOUT" />
-		<appender-ref ref="FILE" />
-		<appender-ref ref="ERROR-FILE"/>
+		<!--<appender-ref ref="FILE" />-->
+		<!--<appender-ref ref="ERROR-FILE"/>-->
 	</root>
 
 </configuration>

@@ -57,7 +57,7 @@ trait Proxy extends Actor with ActorLogging with Stash {
   }
 
 
-	def alive: Receive = {
+	def alive: Receive = LoggingReceive {
 		case state: CurrentClusterState ⇒ onClusterState(state)
 		case MemberUp(m) ⇒ onMemberUp(m)
 		case MemberRemoved(m, previousStatus) ⇒ onMemberRemoved(m, previousStatus)
@@ -142,7 +142,7 @@ class LeaderProxy(
  * @param role akka.cluster.role of member
  */
 class RandomProxy(
-		override val path: String,
-		override val role: Option[String] = None) extends RandomSelector {
+		val path: String,
+		val role: Option[String] = None) extends RandomSelector {
 	def receiver: Option[ActorSelection] = random
 }

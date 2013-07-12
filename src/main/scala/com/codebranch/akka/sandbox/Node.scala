@@ -46,7 +46,10 @@ abstract class Node extends Proxy with LeaderSelector {
 
 
   override def process: Receive = {
-	  case Workers(w) => workers ++= w
+	  case Workers(w) => {
+		  workers ++= w
+		  workers.values foreach watch
+	  }
 
 	  case WorkerNotFound(msg, r) => {
 	    val key = extractKey(msg)
@@ -78,11 +81,20 @@ abstract class Node extends Proxy with LeaderSelector {
       sender ! NewWorker(createWorker(key), key)
     }
 
-		case WorkerAdded(w, k) => workers += (k -> w)
+		case WorkerAdded(w, k) => {
+			workers += (k -> w)
+			watch(w)
+		}
 
 	  case SubscribeAck(Subscribe(`workerAdded`, `self`)) => {}
 
 		case GetWorkers => sender ! Workers(workers.toMap)
+
+		case Terminated(w) => {
+			val worker = workers.remove(w.path.name)
+			log.debug(s"worker $worker removed")
+		}
+
 
     case msg: ActorId => {
 	    val key = extractKey(msg)

@@ -5,6 +5,7 @@ import akka.actor.{ActorRef, Props, ActorLogging, Actor}
 import akka.util.Timeout
 import concurrent.duration._
 import akka.event.LoggingReceive
+import akka.dispatch.sysmsg.Terminate
 
 
 
@@ -18,7 +19,7 @@ class ClusterNode(val role: Option[String] = None)
 		extends Node with RandomSelector
 {
 
-	implicit val timeout: Timeout = 5 seconds
+	implicit val timeout: Timeout = 100 seconds
 
 	def member = random
 
@@ -44,7 +45,7 @@ class ClusterNode(val role: Option[String] = None)
 }
 
 
-case class Msg(id: String) extends ActorId {
+case class Msg(id: String, task: String = "work") extends ActorId {
 	def actorId = id
 }
 
@@ -53,9 +54,15 @@ class SimpleWorker extends Actor {
 	var messageCount = 0
 
 	def receive: Receive = LoggingReceive {
-		case x => {
-			messageCount += 1
-			sender ! messageCount
+		case Msg(id, task) => {
+			if(task == "restart")
+				throw new Exception("I'm died")
+			else if(task == "terminate")
+				context.stop(self)
+			else {
+				messageCount += 1
+				sender ! messageCount
+			}
 		}
 	}
 }
