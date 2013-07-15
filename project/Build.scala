@@ -43,7 +43,7 @@ object ApplicationBuild extends Build
       libraryDependencies ++= appDependencies
     )
 
-	val AkkaVersion = "2.2.0"
+	val AkkaVersion = "2.2.0-RC1"
 
 	val appDependencies = Seq(
     "com.typesafe" % "config" % "1.0.0",
