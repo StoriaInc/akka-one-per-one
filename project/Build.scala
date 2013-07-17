@@ -28,7 +28,7 @@ object ApplicationBuild extends Build
     Seq (
       organization := "com.codebranch",
       version      := "1.0-SNAPSHOT",
-      scalaVersion := "2.10.1",
+      scalaVersion := "2.10.2",
       retrieveManaged := true,
 	//scalacOptions ++= Seq("-feature"),
       testOptions in Test := Nil,
@@ -40,7 +40,8 @@ object ApplicationBuild extends Build
           "The Buzz Media Repository" at "http://maven.thebuzzmedia.com"
         ),
 
-      libraryDependencies ++= appDependencies
+      libraryDependencies ++= appDependencies,
+	  exportJars := true
     )
 
 	val AkkaVersion = "2.2.0-RC1"
