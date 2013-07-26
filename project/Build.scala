@@ -9,7 +9,19 @@ import akka.sbt.AkkaKernelPlugin.{ Dist, outputDirectory, distJvmOptions}
 
 object ApplicationBuild extends Build
 {
-	val appName         = "one-for-one"
+  def frumaticRepository(r : String) : Resolver =
+    "Sonatype Nexus Repository Manager" at "http://nexus.frumatic.com/content/repositories/" + r
+  val frumaticRepositorySnapshots = frumaticRepository("snapshots")
+  val frumaticRepositoryReleases = frumaticRepository("releases")
+  val frumaticTypesafeSnapshots = frumaticRepository("typesafe-snapshots")
+  val frumaticTypesafeReleases = frumaticRepository("typesafe")
+
+
+	val appName       = "one-for-one"
+  val AkkaVersion   = "2.2.0-RC1"
+  val scalaVer      = "2.10.2"
+  val isSnapshot    = true
+  val version       = "1.0" + (if (isSnapshot) "-SNAPSHOT" else "")
 
   lazy val multiJvmSettings = SbtMultiJvm.multiJvmSettings ++ Seq(
     // make sure that MultiJvm test are compiled by the default test compilation
@@ -26,25 +38,23 @@ object ApplicationBuild extends Build
 
 	val buildSettings = Defaults.defaultSettings ++ multiJvmSettings ++
     Seq (
-      organization := "com.codebranch",
-      version      := "1.0-SNAPSHOT",
-      scalaVersion := "2.10.2",
+      organization := "codebranch",
+      Keys.version := version,
+      scalaVersion := scalaVer,
       retrieveManaged := true,
-	//scalacOptions ++= Seq("-feature"),
+	    //scalacOptions ++= Seq("-feature"),
       testOptions in Test := Nil,
-      resolvers ++=
-        Seq(
-          "Local Maven Repository" at "file://"+Path.userHome.absolutePath+"/.m2/repository",
-          "Typesafe Repository" at "http://repo.typesafe.com/typesafe/releases/",
-          "Typesafe Cluster Repo" at "http://repo.typesafe.com/typesafe/snapshots/",
-          "The Buzz Media Repository" at "http://maven.thebuzzmedia.com"
-        ),
-
+      resolvers += "Local Maven Repository" at "file://"+Path.userHome.absolutePath+"/.m2/repository",
+      publishTo := {
+        if (isSnapshot)
+          Some(frumaticRepositorySnapshots)
+        else
+          Some(frumaticRepositoryReleases)
+      },
+      credentials += Credentials(Path.userHome / ".ivy2" / ".credentials"),
       libraryDependencies ++= appDependencies,
-	  exportJars := true
+	    exportJars := true
     )
-
-	val AkkaVersion = "2.2.0-RC1"
 
 	val appDependencies = Seq(
     "com.typesafe" % "config" % "1.0.0",

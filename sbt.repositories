@@ -1,0 +1,8 @@
+[repositories]
+local
+frumatic-releases: http://nexus.frumatic.com/content/repositories/releases/
+frumatic-snapshots: http://nexus.frumatic.com/content/repositories/snapshots/
+typesafe-proxy: http://nexus.frumatic.com/content/repositories/typesafe/, [organization]/[module]/(scala_[scalaVersion]/)(sbt_[sbtVersion]/)[revision]/[type]s/[artifact](-[classifier]).[ext]
+scalasbt-proxy: http://nexus.frumatic.com/content/repositories/scalasbt-repo1/
+maven-central-proxy: http://nexus.frumatic.com/content/repositories/central/
+sonatype-proxy: http://nexus.frumatic.com/content/repositories/sonatype/
