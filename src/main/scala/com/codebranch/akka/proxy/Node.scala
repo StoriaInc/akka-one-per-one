@@ -1,17 +1,15 @@
-package com.codebranch.akka.sandbox
+package com.codebranch.akka.proxy
 
 import akka.actor._
 import collection.mutable
-import akka.routing.FromConfig
 import akka.pattern.{ask, pipe}
 import akka.util.Timeout
-import akka.event.LoggingReceive
 import akka.contrib.pattern.DistributedPubSubExtension
-import akka.contrib.pattern.DistributedPubSubMediator.{SubscribeAck, Subscribe, Publish}
 import akka.contrib.pattern.DistributedPubSubMediator.Publish
 import scala.Some
 import akka.contrib.pattern.DistributedPubSubMediator.Subscribe
 import akka.contrib.pattern.DistributedPubSubMediator.SubscribeAck
+import com.codebranch.akka.proxy
 
 
 
@@ -20,7 +18,7 @@ import akka.contrib.pattern.DistributedPubSubMediator.SubscribeAck
  * Date: 6/13/13
  * Time: 12:21 PM
  */
-abstract class Node extends Proxy with LeaderSelector {
+abstract class Node extends proxy.Proxy with LeaderSelector {
   import Node._
   import context._
 
