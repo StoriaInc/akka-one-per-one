@@ -1,16 +1,13 @@
-package com.codebranch.akka.sandbox
+package com.codebranch.akka.proxy
 
 import akka.actor._
 import akka.cluster.{MemberStatus, Member, Cluster}
 import akka.cluster.ClusterEvent._
-import scala.collection.immutable
-import akka.actor.RootActorPath
 import scala.util.Random
 import akka.actor.RootActorPath
 import akka.cluster.ClusterEvent.CurrentClusterState
 import akka.cluster.ClusterEvent.MemberRemoved
 import akka.cluster.ClusterEvent.MemberUp
-import akka.dispatch.{UnboundedDequeBasedMailbox, BoundedDequeBasedMailbox, RequiresMessageQueue}
 import akka.event.LoggingReceive
 
 
