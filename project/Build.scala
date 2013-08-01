@@ -9,6 +9,10 @@ import akka.sbt.AkkaKernelPlugin.{ Dist, outputDirectory, distJvmOptions}
 
 object ApplicationBuild extends Build
 {
+  val frumaticPublicRepository : Resolver = "Frumatic Public" at "http://nexus.frumatic.com/content/groups/public/"
+  val frumaticPublicIvyRepository : Resolver =
+    Resolver.url("Frumatic Public Ivy", url("http://nexus.frumatic.com/content/groups/public/"))(Resolver.ivyStylePatterns)
+
   def frumaticRepository(r : String) : Resolver =
     "Sonatype Nexus Repository Manager" at "http://nexus.frumatic.com/content/repositories/" + r
   val frumaticRepositorySnapshots = frumaticRepository("snapshots")
@@ -17,9 +21,9 @@ object ApplicationBuild extends Build
   val frumaticTypesafeReleases = frumaticRepository("typesafe")
 
 
-	val appName       = "one-for-one"
-  val AkkaVersion   = "2.2.0-RC1"
-  val scalaVer      = "2.10.2"
+	val appName       = "one-per-one"
+  val AkkaVersion   = "2.2.0"
+  val scalaVer      = "2.10.0"
   val isSnapshot    = true
   val version       = "1.0" + (if (isSnapshot) "-SNAPSHOT" else "")
 
@@ -44,7 +48,10 @@ object ApplicationBuild extends Build
       retrieveManaged := true,
 	    //scalacOptions ++= Seq("-feature"),
       testOptions in Test := Nil,
-      resolvers += "Local Maven Repository" at "file://"+Path.userHome.absolutePath+"/.m2/repository",
+      resolvers ++= Seq(
+        "Local Maven Repository" at "file://"+Path.userHome.absolutePath+"/.m2/repository",
+        frumaticPublicRepository,
+        frumaticPublicIvyRepository),
       publishTo := {
         if (isSnapshot)
           Some(frumaticRepositorySnapshots)
@@ -52,8 +59,8 @@ object ApplicationBuild extends Build
           Some(frumaticRepositoryReleases)
       },
       credentials += Credentials(Path.userHome / ".ivy2" / ".credentials"),
-      libraryDependencies ++= appDependencies,
-	    exportJars := true
+      libraryDependencies ++= appDependencies
+	    //exportJars := true
     )
 
 	val appDependencies = Seq(
