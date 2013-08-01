@@ -9,17 +9,18 @@ import akka.sbt.AkkaKernelPlugin.{ Dist, outputDirectory, distJvmOptions}
 
 object ApplicationBuild extends Build
 {
-  val frumaticPublicRepository : Resolver = "Frumatic Public" at "http://nexus.frumatic.com/content/groups/public/"
+  val frumaticRepositoryURLPrefix = "http://nexus.frumatic.com/content"
+  val frumaticPublicRepositoryURL = frumaticRepositoryURLPrefix + "/groups/public/"
+  val frumaticPublicRepository : Resolver = "Frumatic Public" at frumaticPublicRepositoryURL
   val frumaticPublicIvyRepository : Resolver =
-    Resolver.url("Frumatic Public Ivy", url("http://nexus.frumatic.com/content/groups/public/"))(Resolver.ivyStylePatterns)
+    Resolver.url("Frumatic Public Ivy", url(frumaticPublicRepositoryURL))(Resolver.ivyStylePatterns)
 
   def frumaticRepository(r : String) : Resolver =
-    "Sonatype Nexus Repository Manager" at "http://nexus.frumatic.com/content/repositories/" + r
+    "Sonatype Nexus Repository Manager" at frumaticRepositoryURLPrefix + "/repositories/" + r
   val frumaticRepositorySnapshots = frumaticRepository("snapshots")
   val frumaticRepositoryReleases = frumaticRepository("releases")
-  val frumaticTypesafeSnapshots = frumaticRepository("typesafe-snapshots")
-  val frumaticTypesafeReleases = frumaticRepository("typesafe")
 
+  val resolvers = Seq(frumaticPublicRepository, frumaticPublicIvyRepository)
 
 	val appName       = "one-per-one"
   val AkkaVersion   = "2.2.0"
@@ -48,10 +49,7 @@ object ApplicationBuild extends Build
       retrieveManaged := true,
 	    //scalacOptions ++= Seq("-feature"),
       testOptions in Test := Nil,
-      resolvers ++= Seq(
-        "Local Maven Repository" at "file://"+Path.userHome.absolutePath+"/.m2/repository",
-        frumaticPublicRepository,
-        frumaticPublicIvyRepository),
+      Keys.resolvers ++= resolvers,
       publishTo := {
         if (isSnapshot)
           Some(frumaticRepositorySnapshots)
