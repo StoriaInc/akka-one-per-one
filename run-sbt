@@ -1,0 +1,3 @@
+#!/bin/bash
+exec sbt -Dsbt.repository.config=sbt.repositories -Dsbt.override.build.repos=true $@
+
