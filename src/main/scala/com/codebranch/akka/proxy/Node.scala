@@ -89,8 +89,13 @@ abstract class Node extends proxy.Proxy with LeaderSelector {
 		case GetWorkers => sender ! Workers(workers.toMap)
 
 		case Terminated(w) => {
-			val worker = workers.remove(w.path.name)
-			log.debug(s"worker $worker removed")
+			workers.find(_._2 == w) match {
+        case Some((key, worker)) =>
+          log.debug(s"worker $worker removed")
+          workers -= key
+        case _ =>
+          log.debug(s"worker not found")
+      }
 		}
 
 
