@@ -102,7 +102,7 @@ abstract class Node extends proxy.Proxy with LeaderSelector {
     case msg: ActorId => {
 	    val key = extractKey(msg)
       workers.get(key) match {
-        case Some(w) => w ? msg pipeTo sender
+        case Some(w) => w.forward(msg)  //w ? msg pipeTo sender
         case None => {
 //	        log.debug(s"asking leader $leader create worker for $msg")
 	        leader foreach (_ ! WorkerNotFound(msg, sender))

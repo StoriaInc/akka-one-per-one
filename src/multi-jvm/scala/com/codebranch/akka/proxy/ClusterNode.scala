@@ -1,12 +1,10 @@
-package com.codebranch.akka.sandbox
+package com.codebranch.akka.proxy
 
 
-import akka.actor.{ActorRef, Props, ActorLogging, Actor}
+import akka.actor.{ActorRef, Props, Actor}
 import akka.util.Timeout
 import concurrent.duration._
 import akka.event.LoggingReceive
-import akka.dispatch.sysmsg.Terminate
-import com.codebranch.akka.proxy.{ActorId, Node, RandomSelector}
 
 
 

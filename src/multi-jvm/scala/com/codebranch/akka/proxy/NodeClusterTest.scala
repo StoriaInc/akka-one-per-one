@@ -1,39 +1,18 @@
-package com.codebranch.akka.sandbox
+package com.codebranch.akka.proxy
 
 import akka.remote.testkit.MultiNodeSpecCallbacks
 import akka.remote.testkit.MultiNodeConfig
 import akka.testkit._
-import akka.routing.{CurrentRoutees, RouterRoutees, FromConfig}
 import akka.cluster._
-import akka.actor._
-import akka.pattern._
-import akka.util._
 import scala.concurrent.duration._
-import org.scalatest.concurrent._
 
-import akka.cluster.ClusterEvent.{ClusterDomainEvent, UnreachableMember, MemberUp, CurrentClusterState}
 import akka.util.Timeout
-import scala.concurrent.{ExecutionContext, Future, Await}
-import akka.cluster.MemberStatus.Up
 import scala.reflect.runtime.{universe=>ru}
-import scala.reflect.runtime.universe._
-import akka.cluster.ClusterEvent.MemberUp
-import akka.cluster.ClusterEvent.CurrentClusterState
-import akka.cluster.ClusterEvent.MemberUp
-import akka.cluster.ClusterEvent.CurrentClusterState
 import akka.cluster.ClusterEvent.MemberUp
 import akka.cluster.ClusterEvent.CurrentClusterState
 
-import ExecutionContext.Implicits.global
-
-import java.io._
-import akka.actor.Status.Success
 import java.util.UUID
-import com.codebranch.akka.proxy.RandomProxy
 
-
-
-//import org.specs2.mutable._
 import org.scalatest._
 import org.scalatest.matchers._
 import akka.actor._
@@ -47,10 +26,6 @@ import scala.language.existentials
  * Date: 6/14/13
  * Time: 1:48 PM
  */
-//object ClusterTest {
-//
-//
-//}
 
 class ClusterTestSpecMultiJvmNode1 extends ClusterTest
 class ClusterTestSpecMultiJvmNode2 extends ClusterTest
@@ -140,7 +115,7 @@ class ClusterTest extends MultiNodeSpec(ClusterTestConfig) with STMultiNodeSpec
 
 	      val tester = actor(new Act {
 		      //number of workers
-		      val w = 10000
+		      val w = 100
 		      //number of tasks
 		      val t = 10
 		      var counter = w*t
@@ -166,7 +141,7 @@ class ClusterTest extends MultiNodeSpec(ClusterTestConfig) with STMultiNodeSpec
 		      }
 	      })
 	      tester ! "start"
-	      expectMsg(1000 seconds, "finish")
+	      expectMsg(10 seconds, "finish")
       }
     }
 
