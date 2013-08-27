@@ -23,7 +23,7 @@ abstract class Node extends proxy.Proxy with LeaderSelector {
   import context._
 
 	val mediator = DistributedPubSubExtension(context.system).mediator
-	val workerAdded = WorkerAdded.getClass.getName
+	val workerAdded = this.getClass.getName + WorkerAdded.getClass.getName
 	val workers = mutable.Map[String, ActorRef]()
 	val pending = mutable.Map[String, List[(ActorRef,Any)]]()
 	def member: Option[ActorSelection]
