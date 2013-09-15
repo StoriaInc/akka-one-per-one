@@ -92,8 +92,7 @@ abstract class Node extends proxy.Proxy with LeaderSelector {
       val key = extractKey(msg)
       workers.get(key) match {
         case Some(w) => w.forward(msg)
-        case None => sender ! m
-
+        case None => sender ! WorkerMissing
       }
     }
 
@@ -152,3 +151,4 @@ trait ActorId {
 }
 
 case class ReturnIfWorkerMissing(msg: ActorId)
+object WorkerMissing
