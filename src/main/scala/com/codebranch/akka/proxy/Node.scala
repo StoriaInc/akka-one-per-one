@@ -99,10 +99,10 @@ abstract class Node extends proxy.Proxy with LeaderSelector {
 		case Terminated(w) => {
 			workers.find(_._2 == w) match {
         case Some((key, worker)) =>
-          log.debug(s"worker $worker removed")
+          log.error(s"worker $worker removed")
           workers -= key
         case _ =>
-          log.debug(s"worker not found")
+          log.error(s"worker not found")
       }
 		}
 
