@@ -75,6 +75,7 @@ abstract class Node extends proxy.Proxy with LeaderSelector {
     }
 
     case CreateWorker(msg) => {
+//      log.error(s"Creating worker for msg $msg")
 	    val key = extractKey(msg)
       sender ! NewWorker(createWorker(key), key)
     }
@@ -99,18 +100,19 @@ abstract class Node extends proxy.Proxy with LeaderSelector {
 		case Terminated(w) => {
 			workers.find(_._2 == w) match {
         case Some((key, worker)) =>
-          log.error(s"worker $worker removed")
+//          log.error(s"worker $worker removed")
           workers -= key
         case _ =>
-          log.error(s"worker not found")
+          log.warning(s"worker not found")
       }
 		}
 
 
     case msg: ActorId => {
+//      log.error(s"got msg $msg, looking for worker")
 	    val key = extractKey(msg)
       workers.get(key) match {
-        case Some(w) => w.forward(msg)  //w ? msg pipeTo sender
+        case Some(w) => w ? msg pipeTo sender //w.forward(msg) -- doesn't work on because sender is local ActorRef
         case None => {
 //	        log.debug(s"asking leader $leader create worker for $msg")
 	        leader foreach (_ ! WorkerNotFound(msg, sender))
