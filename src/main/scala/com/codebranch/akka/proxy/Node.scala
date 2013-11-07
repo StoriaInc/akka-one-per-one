@@ -75,7 +75,7 @@ abstract class Node extends proxy.Proxy with LeaderSelector {
     }
 
     case CreateWorker(msg) => {
-//      log.error(s"Creating worker for msg $msg")
+      log.error(s"Creating worker for msg $msg")
 	    val key = extractKey(msg)
       sender ! NewWorker(createWorker(key), key)
     }

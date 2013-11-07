@@ -82,6 +82,7 @@ trait Proxy extends Actor with ActorLogging with Stash {
 
   protected def onClusterState(state: CurrentClusterState) {
 //    log.error(s"onClusterState: $state")
+//    log.error(s"my roles is: $role")
     membersByAge = state.members.collect {
       case m if role.isEmpty || m.hasRole(role.get) ⇒ m
     }.toVector.sortWith(ageOrdering)
@@ -92,6 +93,7 @@ trait Proxy extends Actor with ActorLogging with Stash {
   protected def onMemberUp(m: Member) {
 //    log.error(s"onMemberUp: member $m")
 //    log.error(s"member roles: ${m.getRoles}")
+//    log.error(s"my roles is: $role")
     if (role.isEmpty || m.hasRole(role.get)){
       membersByAge = (m +: membersByAge).sortWith(ageOrdering)
     }
