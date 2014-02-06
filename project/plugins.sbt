@@ -5,6 +5,6 @@ Resolver.url("Frumatic Public Ivy", url("http://nexus.frumatic.com/content/group
 //"Typesafe Repository" at "http://repo.typesafe.com/typesafe/releases/",
 //"Typesafe Snaphot Repository" at "http://repo.typesafe.com/typesafe/snapshots/")
 
-addSbtPlugin("com.typesafe.sbt" % "sbt-multi-jvm" % "0.3.4")
+addSbtPlugin("com.typesafe.sbt" % "sbt-multi-jvm" % "0.3.8")
 
-addSbtPlugin("com.typesafe.akka" % "akka-sbt-plugin" % "2.2.0")
+addSbtPlugin("com.typesafe.akka" % "akka-sbt-plugin" % "2.2.3")

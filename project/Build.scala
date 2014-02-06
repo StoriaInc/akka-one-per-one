@@ -23,10 +23,10 @@ object ApplicationBuild extends Build
   val resolvers = Seq(frumaticPublicRepository, frumaticPublicIvyRepository)
 
 	val appName       = "one-per-one"
-  val AkkaVersion   = "2.2.0"
-  val scalaVer      = "2.10.2"
+  val AkkaVersion   = "2.2.3"
+  val scalaVer      = "2.10.3"
   val isSnapshot    = true
-  val version       = "1.1.1" + (if (isSnapshot) "-SNAPSHOT" else "")
+  val version       = "1.1.2" + (if (isSnapshot) "-SNAPSHOT" else "")
 
   lazy val multiJvmSettings = SbtMultiJvm.multiJvmSettings ++ Seq(
     // make sure that MultiJvm test are compiled by the default test compilation
@@ -36,9 +36,11 @@ object ApplicationBuild extends Build
     // make sure that MultiJvm tests are executed by the default test target
     executeTests in Test <<=
       ((executeTests in Test), (executeTests in MultiJvm)) map {
-        case ((_, testResults), (_, multiJvmResults)) =>
-          val results = testResults ++ multiJvmResults
-          (Tests.overall(results.values), results)
+		  case (testResults, multiJvmResults) =>
+		  	Tests.Output(
+		  		Tests.overall(List(testResults.overall, multiJvmResults.overall)),
+				testResults.events ++ multiJvmResults.events,
+				testResults.summaries ++ multiJvmResults.summaries)
       })
 
 	val buildSettings = Defaults.defaultSettings ++ multiJvmSettings ++
