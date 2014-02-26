@@ -23,25 +23,26 @@ object ApplicationBuild extends Build
   val resolvers = Seq(frumaticPublicRepository, frumaticPublicIvyRepository)
 
 	val appName       = "one-per-one"
-  val AkkaVersion   = "2.2.3"
+  val AkkaVersion   = "2.3.0-RC4"
   val scalaVer      = "2.10.3"
   val isSnapshot    = true
-  val version       = "1.1.2" + (if (isSnapshot) "-SNAPSHOT" else "")
+  val version       = "1.2.0" + (if (isSnapshot) "-SNAPSHOT" else "")
 
   lazy val multiJvmSettings = SbtMultiJvm.multiJvmSettings ++ Seq(
     // make sure that MultiJvm test are compiled by the default test compilation
     compile in MultiJvm <<= (compile in MultiJvm) triggeredBy (compile in Test),
     // disable parallel tests
-    parallelExecution in Test := false,
-    // make sure that MultiJvm tests are executed by the default test target
-    executeTests in Test <<=
-      ((executeTests in Test), (executeTests in MultiJvm)) map {
-		  case (testResults, multiJvmResults) =>
-		  	Tests.Output(
-		  		Tests.overall(List(testResults.overall, multiJvmResults.overall)),
-				testResults.events ++ multiJvmResults.events,
-				testResults.summaries ++ multiJvmResults.summaries)
-      })
+    parallelExecution in Test := false
+//    // make sure that MultiJvm tests are executed by the default test target
+//    executeTests in Test <<=
+//      ((executeTests in Test), (executeTests in MultiJvm)) map {
+//		  case (testResults, multiJvmResults) =>
+//		  	Tests.Output(
+//		  		Tests.overall(List(testResults.overall, multiJvmResults.overall)),
+//				testResults.events ++ multiJvmResults.events,
+//				testResults.summaries ++ multiJvmResults.summaries)
+//      }
+    )
 
 	val buildSettings = Defaults.defaultSettings ++ multiJvmSettings ++
     Seq (
@@ -75,7 +76,7 @@ object ApplicationBuild extends Build
 		"ch.qos.logback" % "logback-classic" % "1.0.9",
 
   //Testing
-    "com.typesafe.akka" %% "akka-multi-node-testkit" % AkkaVersion,
+    "com.typesafe.akka" %% "akka-multi-node-testkit" % AkkaVersion % "test",
     "org.scalatest" %% "scalatest" % "1.9" % "test"
 	)
 
