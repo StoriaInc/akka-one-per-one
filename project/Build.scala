@@ -23,10 +23,10 @@ object ApplicationBuild extends Build
   val resolvers = Seq(frumaticPublicRepository, frumaticPublicIvyRepository)
 
 	val appName       = "one-per-one"
-  val AkkaVersion   = "2.3.0-RC4"
+  val AkkaVersion   = "2.3.0"
   val scalaVer      = "2.10.3"
   val isSnapshot    = true
-  val version       = "1.2.0" + (if (isSnapshot) "-SNAPSHOT" else "")
+  val version       = "1.3.0" + (if (isSnapshot) "-SNAPSHOT" else "")
 
   lazy val multiJvmSettings = SbtMultiJvm.multiJvmSettings ++ Seq(
     // make sure that MultiJvm test are compiled by the default test compilation
