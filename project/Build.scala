@@ -26,7 +26,7 @@ object ApplicationBuild extends Build
   val AkkaVersion   = "2.3.0"
   val scalaVer      = "2.10.3"
   val isSnapshot    = true
-  val version       = "1.3.0" + (if (isSnapshot) "-SNAPSHOT" else "")
+  val version       = "1.3.1" + (if (isSnapshot) "-SNAPSHOT" else "")
 
   lazy val multiJvmSettings = SbtMultiJvm.multiJvmSettings ++ Seq(
     // make sure that MultiJvm test are compiled by the default test compilation
@@ -69,7 +69,6 @@ object ApplicationBuild extends Build
     "com.typesafe.akka" %% "akka-actor" % AkkaVersion,
     "com.typesafe.akka" %% "akka-remote" % AkkaVersion,
     "com.typesafe.akka" %% "akka-cluster" % AkkaVersion,
-    "com.typesafe.akka" %% "akka-contrib" % AkkaVersion,
 
 	//Logging
 	  "com.typesafe.akka" %% "akka-slf4j" % AkkaVersion,

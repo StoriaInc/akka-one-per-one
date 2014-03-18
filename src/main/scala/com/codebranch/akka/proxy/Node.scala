@@ -4,11 +4,6 @@ import akka.actor._
 import collection.mutable
 import akka.pattern.{ask, pipe}
 import akka.util.Timeout
-import akka.contrib.pattern.DistributedPubSubExtension
-import akka.contrib.pattern.DistributedPubSubMediator.Publish
-import scala.Some
-import akka.contrib.pattern.DistributedPubSubMediator.Subscribe
-import akka.contrib.pattern.DistributedPubSubMediator.SubscribeAck
 import com.codebranch.akka.proxy
 
 
@@ -22,7 +17,6 @@ abstract class Node extends proxy.Proxy with LeaderSelector {
   import Node._
   import context._
 
-	val mediator = DistributedPubSubExtension(context.system).mediator
 	val workerAdded = this.getClass.getName + WorkerAdded.getClass.getName
 	val workers = mutable.Map[String, ActorRef]()
 	val pending = mutable.Map[String, List[(ActorRef,Any)]]()
@@ -38,7 +32,6 @@ abstract class Node extends proxy.Proxy with LeaderSelector {
 
 	override def preStart() {
 		super.preStart()
-		mediator ! Subscribe(workerAdded, self)
 		leader foreach (_ ! GetWorkers)
 	}
 
@@ -71,7 +64,11 @@ abstract class Node extends proxy.Proxy with LeaderSelector {
       }
       pending -= key
       workers += (key -> ref)
-		  mediator ! Publish(workerAdded, WorkerAdded(ref, key))
+
+      membersByAge.map(m ⇒ context.actorSelection(
+        RootActorPath(m.address) / path.split("/"))).foreach{sel =>
+        sel ! WorkerAdded(ref, key)
+      }
     }
 
     case CreateWorker(msg) => {
@@ -84,8 +81,6 @@ abstract class Node extends proxy.Proxy with LeaderSelector {
 			workers += (k -> w)
 			watch(w)
 		}
-
-	  case SubscribeAck(Subscribe(`workerAdded`, `self`)) => {}
 
 		case GetWorkers => sender ! Workers(workers.toMap)
 
