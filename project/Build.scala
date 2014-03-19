@@ -26,7 +26,7 @@ object ApplicationBuild extends Build
   val AkkaVersion   = "2.3.0"
   val scalaVer      = "2.10.3"
   val isSnapshot    = true
-  val version       = "1.3.1" + (if (isSnapshot) "-SNAPSHOT" else "")
+  val version       = "1.3.2" + (if (isSnapshot) "-SNAPSHOT" else "")
 
   lazy val multiJvmSettings = SbtMultiJvm.multiJvmSettings ++ Seq(
     // make sure that MultiJvm test are compiled by the default test compilation
