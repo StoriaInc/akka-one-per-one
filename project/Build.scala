@@ -3,8 +3,6 @@ import Keys._
 import com.typesafe.sbt.SbtMultiJvm
 import com.typesafe.sbt.SbtMultiJvm.MultiJvmKeys.{ MultiJvm }
 import com.typesafe.sbt.SbtMultiJvm._
-import akka.sbt.AkkaKernelPlugin
-import akka.sbt.AkkaKernelPlugin.{ Dist, outputDirectory, distJvmOptions}
 
 
 object ApplicationBuild extends Build
@@ -23,8 +21,8 @@ object ApplicationBuild extends Build
   val resolvers = Seq(frumaticPublicRepository, frumaticPublicIvyRepository)
 
 	val appName       = "one-per-one"
-  val AkkaVersion   = "2.3.0"
-  val scalaVer      = "2.10.3"
+  val AkkaVersion   = "2.3.3"
+  val scalaVer      = "2.10.4"
   val isSnapshot    = true
   val version       = "1.3.2" + (if (isSnapshot) "-SNAPSHOT" else "")
 
