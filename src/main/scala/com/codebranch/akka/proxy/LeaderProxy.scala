@@ -66,7 +66,7 @@ trait Proxy extends Actor with ActorLogging with Stash {
 	 * Forward message to `receiver`
 	 */
 	def forward: Receive = { case msg =>
-		receiver foreach (_.tell(msg, sender))
+		receiver foreach (_ forward msg)
 	}
 
 
@@ -82,7 +82,7 @@ trait Proxy extends Actor with ActorLogging with Stash {
 
   protected def onClusterState(state: CurrentClusterState) {
     membersByAge = state.members.collect {
-      case m if role.isEmpty || m.hasRole(role.get) ⇒ m
+      case m if m.status == MemberStatus.Up && (role.isEmpty || m.hasRole(role.get)) ⇒ m
     }.toVector.sortWith(ageOrdering)
   }
 
