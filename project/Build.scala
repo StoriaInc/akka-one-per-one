@@ -18,11 +18,15 @@ object ApplicationBuild extends Build
   val frumaticRepositorySnapshots = frumaticRepository("snapshots")
   val frumaticRepositoryReleases = frumaticRepository("releases")
 
-  val resolvers = Seq(frumaticPublicRepository, frumaticPublicIvyRepository)
+  val resolvers = Seq(
+    "Sonatype releases" at "http://oss.sonatype.org/content/repositories/releases/",
+    "Typesafe releases" at "http://repo.typesafe.com/typesafe/releases/",
+    frumaticPublicRepository, frumaticPublicIvyRepository
+  )
 
 	val appName       = "one-per-one"
   val AkkaVersion   = "2.3.3"
-  val scalaVer      = "2.10.4"
+  val scalaVer      = "2.11.1"
   val isSnapshot    = true
   val version       = "1.3.2" + (if (isSnapshot) "-SNAPSHOT" else "")
 
@@ -78,7 +82,7 @@ object ApplicationBuild extends Build
 
   //Testing
     "com.typesafe.akka" %% "akka-multi-node-testkit" % AkkaVersion % "test",
-    "org.scalatest" %% "scalatest" % "1.9" % "test"
+    "org.scalatest" %% "scalatest" % "2.2.0" % "test"
 	)
 
 	val main = Project(

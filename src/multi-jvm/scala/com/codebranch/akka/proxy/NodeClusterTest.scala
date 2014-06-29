@@ -14,7 +14,6 @@ import akka.cluster.ClusterEvent.CurrentClusterState
 import java.util.UUID
 
 import org.scalatest._
-import org.scalatest.matchers._
 import akka.actor._
 import com.typesafe.config._
 import akka.testkit.ImplicitSender
@@ -42,7 +41,7 @@ object ClusterTestConfig extends MultiNodeConfig
 
 
 trait STMultiNodeSpec extends MultiNodeSpecCallbacks
-	with WordSpec with MustMatchers with BeforeAndAfterAll {
+	with WordSpecLike with MustMatchers with BeforeAndAfterAll {
 
   override def beforeAll = multiNodeSpecBeforeAll()
   override def afterAll = multiNodeSpecAfterAll()
@@ -50,7 +49,7 @@ trait STMultiNodeSpec extends MultiNodeSpecCallbacks
 
 
 class NodeTest extends TestKit(ActorSystem("node-test-system"))
-	with WordSpec with MustMatchers with BeforeAndAfterAll {
+	with WordSpecLike with MustMatchers with BeforeAndAfterAll {
 	{
 		"Worker" should {
 			"response with message count" in {
