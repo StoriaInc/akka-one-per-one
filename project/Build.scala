@@ -25,10 +25,10 @@ object ApplicationBuild extends Build
   )
 
 	val appName       = "one-per-one"
-  val AkkaVersion   = "2.3.3"
-  val scalaVer      = "2.11.1"
-  val isSnapshot    = true
-  val version       = "1.3.2" + (if (isSnapshot) "-SNAPSHOT" else "")
+  val AkkaVersion   = "2.3.7"
+  val scalaVer      = "2.11.5"
+  val isSnapshot    = false
+  val version       = "2.3.7" + (if (isSnapshot) "-SNAPSHOT" else "")
 
   lazy val multiJvmSettings = SbtMultiJvm.multiJvmSettings ++ Seq(
     // make sure that MultiJvm test are compiled by the default test compilation
@@ -71,7 +71,7 @@ object ApplicationBuild extends Build
     )
 
 	val appDependencies = Seq(
-    "com.typesafe" % "config" % "1.0.0",
+    "com.typesafe" % "config" % "1.2.1",
     "com.typesafe.akka" %% "akka-actor" % AkkaVersion,
     "com.typesafe.akka" %% "akka-remote" % AkkaVersion,
     "com.typesafe.akka" %% "akka-cluster" % AkkaVersion,
@@ -82,7 +82,7 @@ object ApplicationBuild extends Build
 
   //Testing
     "com.typesafe.akka" %% "akka-multi-node-testkit" % AkkaVersion % "test",
-    "org.scalatest" %% "scalatest" % "2.2.0" % "test"
+    "org.scalatest" %% "scalatest" % "2.2.4" % "test"
 	)
 
 	val main = Project(
