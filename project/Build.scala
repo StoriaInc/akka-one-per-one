@@ -25,8 +25,8 @@ object ApplicationBuild extends Build
   )
 
 	val appName       = "one-per-one"
-  val AkkaVersion   = "2.3.9"
-  val scalaVer      = "2.11.5"
+  val AkkaVersion   = "2.3.12"
+  val scalaVer      = "2.11.7"
   val isSnapshot    = false
   val version       = AkkaVersion + (if (isSnapshot) "-SNAPSHOT" else "")
 
