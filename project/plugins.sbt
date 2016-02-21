@@ -3,4 +3,4 @@ resolvers ++= Seq(
 "Typesafe Repository" at "http://repo.typesafe.com/typesafe/releases/",
 "Typesafe Snaphot Repository" at "http://repo.typesafe.com/typesafe/snapshots/")
 
-addSbtPlugin("com.typesafe.sbt" % "sbt-multi-jvm" % "0.3.9")
+addSbtPlugin("com.typesafe.sbt" % "sbt-multi-jvm" % "0.3.11")

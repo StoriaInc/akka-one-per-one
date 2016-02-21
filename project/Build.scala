@@ -25,7 +25,7 @@ object ApplicationBuild extends Build
   )
 
 	val appName       = "one-per-one"
-  val AkkaVersion   = "2.4.1"
+  val AkkaVersion   = "2.4.2"
   val scalaVer      = "2.11.7"
   val isSnapshot    = false
   val version       = AkkaVersion + (if (isSnapshot) "-SNAPSHOT" else "")
@@ -50,7 +50,7 @@ object ApplicationBuild extends Build
     }
   )
 
-	val buildSettings = Defaults.defaultSettings ++ multiJvmSettings ++
+	val buildSettings = Defaults.coreDefaultSettings ++ multiJvmSettings ++
     Seq (
       organization := "codebranch",
       Keys.version := version,
@@ -71,7 +71,7 @@ object ApplicationBuild extends Build
     )
 
 	val appDependencies = Seq(
-    "com.typesafe" % "config" % "1.2.1",
+    "com.typesafe" % "config" % "1.3.0",
     "com.typesafe.akka" %% "akka-actor" % AkkaVersion,
     "com.typesafe.akka" %% "akka-remote" % AkkaVersion,
     "com.typesafe.akka" %% "akka-cluster" % AkkaVersion,
